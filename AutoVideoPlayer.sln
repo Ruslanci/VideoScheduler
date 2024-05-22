@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34511.84
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoVideoPlayer", "AutoVideoPlayer\AutoVideoPlayer.csproj", "{EA4F143C-B97A-48C8-A472-F899C28CEF16}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA4F143C-B97A-48C8-A472-F899C28CEF16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA4F143C-B97A-48C8-A472-F899C28CEF16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA4F143C-B97A-48C8-A472-F899C28CEF16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA4F143C-B97A-48C8-A472-F899C28CEF16}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {35A11FE7-FB90-4BF3-8E70-75903D964156}
+	EndGlobalSection
+EndGlobal

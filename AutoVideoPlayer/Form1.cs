@@ -1,9 +1,11 @@
-﻿using System;
+﻿using AxWMPLib;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Odbc;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,11 +16,27 @@ namespace AutoVideoPlayer
     public partial class Form1 : Form
     {
 
-        private string videoPath;
+        private Timer checkTimeTimer;
+        private Queue<ScheduledVideo> scheduledVideos;
+        private ScheduledVideo currentVideo;
+
 
         public Form1()
         {
             InitializeComponent();
+
+            scheduledVideos = new Queue<ScheduledVideo>();
+
+            checkTimeTimer = new Timer();
+            checkTimeTimer.Interval = 1000; // Check every second
+            checkTimeTimer.Tick += CheckTimeTimer_Tick;
+            checkTimeTimer.Start();
+
+            axWindowsMediaPlayer1.uiMode = "none";
+            axWindowsMediaPlayer1.PlayStateChange += Player_PlayStateChange;
+            axWindowsMediaPlayer1.MediaError += Player_MediaError;
+            this.Activated += Form1_Activated;
+            this.Deactivate += Form1_Deactivate;
         }
 
         private void chooseVideoButton_Click(object sender, EventArgs e)
@@ -27,64 +45,132 @@ namespace AutoVideoPlayer
             ofd.Filter = "Video Files|*.mp4;*.avi;*.mkv";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                videoPath = ofd.FileName;
+                // Prompt user to set the time
+                DateTime chosenTime;
+                decimal numberOfPlays;
+                using (var form = new SetTimeForm())
+                {
+                    var result = form.ShowDialog();
+                    if (result == DialogResult.OK)
+                    {
+                        chosenTime = form.ChosenTime;
+                        numberOfPlays = form.NumberOfPlays;
+                    }
+                    else
+                    {
+                        // User cancelled, handle accordingly
+                        return;
+                    }
+                }
+
+
+                // Now you have the chosen video path and time
+                string videoPath = ofd.FileName;
+
+                ScheduledVideo scheduledVideo = new ScheduledVideo
+                {
+                    VideoPath = videoPath, // Assuming videoPath is set by chooseVideoButton_Click
+                    ScheduledTime = chosenTime,
+                    TimesToRepeat = numberOfPlays,
+                    IsPlaying = false
+                };
+                scheduledVideos.Enqueue(scheduledVideo);
+
+
+                Label videoLabel = new Label();
+                videoLabel.Text = scheduledVideo.ToString();
+                videoLabel.AutoSize = true;
+                videoLabel.Location = new Point(chooseVideoButton.Bottom, chooseVideoButton.Bottom + 15);
+
+
+                // Add labels to the form
+                this.Controls.Add(videoLabel);
             }
         }
 
-        private void addVideoButton_Click(object sender, EventArgs e)
+
+
+        private void PlayFile(string url)
         {
-            int verticalSpacing = 10; // Spacing between controls
-
-            // Create a new instance of the Button
-            Button newChooseVideoButton = new Button();
-            newChooseVideoButton.Location = new Point(128, this.chooseVideoButton.Bottom + verticalSpacing);
-            newChooseVideoButton.Name = "chooseVideoButton" + (this.Controls.OfType<Button>().Count(b => b.Name.StartsWith("chooseVideoButton")) + 1);
-            newChooseVideoButton.Size = new Size(157, 30);
-            newChooseVideoButton.Text = "Выбрать видео";
-            newChooseVideoButton.UseVisualStyleBackColor = true;
-            newChooseVideoButton.Click += new EventHandler(this.chooseVideoButton_Click);
-
-            // Create a new instance of the DateTimePicker
-            DateTimePicker newDateTimePicker = new DateTimePicker();
-            newDateTimePicker.Format = DateTimePickerFormat.Time;
-            newDateTimePicker.Location = new Point(350, this.dateTimePicker1.Bottom + verticalSpacing);
-            newDateTimePicker.Name = "dateTimePicker" + (this.Controls.OfType<DateTimePicker>().Count() + 1);
-            newDateTimePicker.Size = new Size(87, 20);
-
-            // Create a new instance of the NumericUpDown
-            NumericUpDown newNumericUpDown = new NumericUpDown();
-            newNumericUpDown.Location = new Point(560, this.numericUpDown1.Bottom + verticalSpacing);
-            newNumericUpDown.Name = "numericUpDown" + (this.Controls.OfType<NumericUpDown>().Count() + 1);
-            newNumericUpDown.Size = new Size(120, 20);
-            newNumericUpDown.Value = new decimal(new int[] { 1, 0, 0, 0 });
-
-            // Calculate new Y position for the addVideoButton
-            int newYPosition = Math.Max(newChooseVideoButton.Bottom, Math.Max(newDateTimePicker.Bottom, newNumericUpDown.Bottom)) + verticalSpacing;
-
-            // Update the position of addVideoButton
-            this.addVideoButton.Location = new Point(this.addVideoButton.Location.X, newYPosition);
-
-            // Add the new controls to the form
-            this.Controls.Add(newChooseVideoButton);
-            this.Controls.Add(newDateTimePicker);
-            this.Controls.Add(newNumericUpDown);
+            axWindowsMediaPlayer1.URL = url;
+            axWindowsMediaPlayer1.Ctlcontrols.play();
+            this.TopMost = true;
         }
 
-
-
-        private void Form1_Load(object sender, EventArgs e)
+        private void PlayNextVideo()
         {
-
+            if (scheduledVideos.Count > 0)
+            {
+                currentVideo = scheduledVideos.Peek();
+                currentVideo.IsPlaying = true;
+                PlayFile(currentVideo.VideoPath);
+            }
         }
 
-        private void label2_Click(object sender, EventArgs e)
+        private void Player_PlayStateChange(object sender, AxWMPLib._WMPOCXEvents_PlayStateChangeEvent e)
         {
-
+            if (e.newState == (int)WMPLib.WMPPlayState.wmppsPlaying)
+            {
+                axWindowsMediaPlayer1.fullScreen = true;
+            }
+            else if (e.newState == (int)WMPLib.WMPPlayState.wmppsMediaEnded)
+            {
+                if (currentVideo != null && currentVideo.TimesToRepeat > 0)
+                {
+                    currentVideo.TimesToRepeat--;
+                    if (currentVideo.TimesToRepeat > 0)
+                    {
+                        axWindowsMediaPlayer1.Ctlcontrols.play();
+                    }
+                    else
+                    {
+                        currentVideo = null;
+                        scheduledVideos.Dequeue();
+                    }
+                }
+            }
         }
 
-        private void label3_Click(object sender, EventArgs e)
+        private void Player_MediaError(object sender, AxWMPLib._WMPOCXEvents_MediaErrorEvent e)
         {
+            MessageBox.Show("Ошибка при проигрывании медиафайла.");
+            this.Close();
+        }
 
+        private void CheckTimeTimer_Tick(object sender, EventArgs e)
+        {
+            DateTime now = DateTime.Now;
+
+            foreach (var scheduledVideo in scheduledVideos)
+            {
+                if (scheduledVideo.TimesToRepeat <= 0)
+                {
+
+                }
+                // Compare only the time part
+                if (scheduledVideo.ScheduledTime.TimeOfDay.Minutes <= now.TimeOfDay.Minutes && scheduledVideo.IsPlaying == false)
+                {
+                    PlayFile(scheduledVideo.VideoPath);
+                    scheduledVideo.IsPlaying = true;
+                    break; // Play only one video at a time
+                }
+            }
+        }
+
+        private void Form1_Activated(object sender, EventArgs e)
+        {
+            if (axWindowsMediaPlayer1.playState == WMPLib.WMPPlayState.wmppsPlaying)
+            {
+                axWindowsMediaPlayer1.fullScreen = true;
+            }
+        }
+
+        private void Form1_Deactivate(object sender, EventArgs e)
+        {
+            if (axWindowsMediaPlayer1.playState == WMPLib.WMPPlayState.wmppsPlaying)
+            {
+                axWindowsMediaPlayer1.fullScreen = true;
+            }
         }
     }
 }

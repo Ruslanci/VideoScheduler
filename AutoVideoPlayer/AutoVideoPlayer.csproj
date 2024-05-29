@@ -54,6 +54,10 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScheduledVideo.cs" />
+    <Compile Include="SetTimeForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -80,6 +84,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <COMReference Include="AxWMPLib">
+      <Guid>{6BF52A50-394A-11D3-B153-00C04F79FAA6}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>aximp</WrapperTool>
+      <Isolated>False</Isolated>
+    </COMReference>
     <COMReference Include="WMPLib">
       <Guid>{6BF52A50-394A-11D3-B153-00C04F79FAA6}</Guid>
       <VersionMajor>1</VersionMajor>

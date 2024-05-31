@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AutoVideoPlayer
 {
@@ -14,11 +10,21 @@ namespace AutoVideoPlayer
 
         public bool IsPlaying { get; set; }
 
-        public decimal TimesToRepeat { get; set; }
+        public int TimesToRepeat { get; set; }
+
+        public TimeSpan VideoDuration { get; set; }
+
+        public DateTime EndTime
+        {
+            get
+            {
+                return ScheduledTime.Add(TimeSpan.FromTicks(VideoDuration.Ticks * (long)TimesToRepeat));
+            }
+        }
 
         public override string ToString()
         {
-            return $"Видео: {Path.GetFileName(VideoPath)}. Время: {ScheduledTime.ToString("yyyy-MM-dd HH:mm")}. Повторов: {TimesToRepeat}";
+            return $"Видео: {Path.GetFileName(VideoPath)}\nВремя начала: {ScheduledTime:yyyy-MM-dd HH:mm:00}\nВремя окончания: {EndTime:yyyy-MM-dd HH:mm:ss}\nПовторов: {TimesToRepeat}\n";
         }
     }
 }

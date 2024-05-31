@@ -1,6 +1,6 @@
 ﻿namespace AutoVideoPlayer
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         /// Обязательная переменная конструктора.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.chooseVideoButton = new System.Windows.Forms.Button();
             this.axWindowsMediaPlayer1 = new AxWMPLib.AxWindowsMediaPlayer();
             ((System.ComponentModel.ISupportInitialize)(this.axWindowsMediaPlayer1)).BeginInit();
@@ -36,7 +36,7 @@
             // 
             // chooseVideoButton
             // 
-            this.chooseVideoButton.Location = new System.Drawing.Point(321, 12);
+            this.chooseVideoButton.Location = new System.Drawing.Point(589, 161);
             this.chooseVideoButton.Name = "chooseVideoButton";
             this.chooseVideoButton.Size = new System.Drawing.Size(155, 80);
             this.chooseVideoButton.TabIndex = 0;

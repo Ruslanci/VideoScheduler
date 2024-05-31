@@ -1,34 +1,37 @@
-﻿using AxWMPLib;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Data.Odbc;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
 using System.Windows.Forms;
+using WMPLib;
 
 namespace AutoVideoPlayer
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
 
         private Timer checkTimeTimer;
         private Queue<ScheduledVideo> scheduledVideos;
         private ScheduledVideo currentVideo;
+        private VideoLabelManager videoLabelManager;
+        private string saveFilePath = "scheduledVideos.json";
 
 
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
+            InitializeMainForm();
+        }
 
+        public void InitializeMainForm()
+        {
             scheduledVideos = new Queue<ScheduledVideo>();
 
             checkTimeTimer = new Timer();
-            checkTimeTimer.Interval = 1000; // Check every second
+            checkTimeTimer.Interval = 1000;
             checkTimeTimer.Tick += CheckTimeTimer_Tick;
             checkTimeTimer.Start();
 
@@ -36,7 +39,10 @@ namespace AutoVideoPlayer
             axWindowsMediaPlayer1.PlayStateChange += Player_PlayStateChange;
             axWindowsMediaPlayer1.MediaError += Player_MediaError;
             this.Activated += Form1_Activated;
-            this.Deactivate += Form1_Deactivate;
+
+            videoLabelManager = new VideoLabelManager(this, 10, 0, 70);
+
+            LoadScheduledVideos();
         }
 
         private void chooseVideoButton_Click(object sender, EventArgs e)
@@ -45,10 +51,9 @@ namespace AutoVideoPlayer
             ofd.Filter = "Video Files|*.mp4;*.avi;*.mkv";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                // Prompt user to set the time
                 DateTime chosenTime;
                 decimal numberOfPlays;
-                using (var form = new SetTimeForm())
+                using (var form = new AddVideoForm())
                 {
                     var result = form.ShowDialog();
                     if (result == DialogResult.OK)
@@ -58,23 +63,24 @@ namespace AutoVideoPlayer
                     }
                     else
                     {
-                        // User cancelled, handle accordingly
                         return;
                     }
                 }
 
 
-                // Now you have the chosen video path and time
                 string videoPath = ofd.FileName;
+                TimeSpan videoDuration = GetVideoDuration(videoPath);
 
                 ScheduledVideo scheduledVideo = new ScheduledVideo
                 {
-                    VideoPath = videoPath, // Assuming videoPath is set by chooseVideoButton_Click
+                    VideoPath = videoPath,
                     ScheduledTime = chosenTime,
-                    TimesToRepeat = numberOfPlays,
+                    TimesToRepeat = (int)numberOfPlays,
+                    VideoDuration = videoDuration,
                     IsPlaying = false
                 };
                 scheduledVideos.Enqueue(scheduledVideo);
+                SaveScheduledVideos();
 
 
                 Label videoLabel = new Label();
@@ -83,28 +89,38 @@ namespace AutoVideoPlayer
                 videoLabel.Location = new Point(chooseVideoButton.Bottom, chooseVideoButton.Bottom + 15);
 
 
-                // Add labels to the form
-                this.Controls.Add(videoLabel);
+                videoLabelManager.AddLabel(scheduledVideo.ToString());
             }
         }
 
 
+
+        private TimeSpan GetVideoDuration(string videoPath)
+        {
+            if (string.IsNullOrEmpty(videoPath))
+            {
+                throw new ArgumentException("Video path cannot be null or empty.", nameof(videoPath));
+            }
+
+            try
+            {
+                WindowsMediaPlayer wmp = new WindowsMediaPlayer();
+                IWMPMedia mediaInfo = wmp.newMedia(videoPath);
+                double durationInSeconds = mediaInfo.duration;
+
+                return TimeSpan.FromSeconds(durationInSeconds);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An error occurred while retrieving the video duration: {ex.Message}", ex);
+            }
+        }
 
         private void PlayFile(string url)
         {
             axWindowsMediaPlayer1.URL = url;
             axWindowsMediaPlayer1.Ctlcontrols.play();
             this.TopMost = true;
-        }
-
-        private void PlayNextVideo()
-        {
-            if (scheduledVideos.Count > 0)
-            {
-                currentVideo = scheduledVideos.Peek();
-                currentVideo.IsPlaying = true;
-                PlayFile(currentVideo.VideoPath);
-            }
         }
 
         private void Player_PlayStateChange(object sender, AxWMPLib._WMPOCXEvents_PlayStateChangeEvent e)
@@ -147,12 +163,11 @@ namespace AutoVideoPlayer
                 {
 
                 }
-                // Compare only the time part
                 if (scheduledVideo.ScheduledTime.TimeOfDay.Minutes <= now.TimeOfDay.Minutes && scheduledVideo.IsPlaying == false)
                 {
                     PlayFile(scheduledVideo.VideoPath);
                     scheduledVideo.IsPlaying = true;
-                    break; // Play only one video at a time
+                    break;
                 }
             }
         }
@@ -165,12 +180,31 @@ namespace AutoVideoPlayer
             }
         }
 
-        private void Form1_Deactivate(object sender, EventArgs e)
+    
+
+        private void SaveScheduledVideos()
         {
-            if (axWindowsMediaPlayer1.playState == WMPLib.WMPPlayState.wmppsPlaying)
+            var scheduledVideosList = scheduledVideos.ToList();
+            string json = JsonConvert.SerializeObject(scheduledVideosList, Formatting.Indented);
+            File.WriteAllText(saveFilePath, json);
+        }
+
+        private void LoadScheduledVideos()
+        {
+            if (File.Exists(saveFilePath))
             {
-                axWindowsMediaPlayer1.fullScreen = true;
+                string json = File.ReadAllText(saveFilePath);
+                var scheduledVideosList = JsonConvert.DeserializeObject<List<ScheduledVideo>>(json);
+
+                var validVideos = scheduledVideosList.Where(video => video.EndTime > DateTime.Now).ToList();
+                scheduledVideos = new Queue<ScheduledVideo>(validVideos);
+
+                foreach (var video in scheduledVideos)
+                {
+                    videoLabelManager.AddLabel(video.ToString());
+                }
             }
         }
+
     }
 }

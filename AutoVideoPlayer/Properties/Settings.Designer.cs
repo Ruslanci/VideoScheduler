@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace AutoVideoPlayer.Properties
+namespace VideoScheduler.Properties
 {
 
 

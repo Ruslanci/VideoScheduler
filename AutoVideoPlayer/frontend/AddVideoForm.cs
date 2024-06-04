@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace AutoVideoPlayer
+namespace VideoScheduler
 {
     public class AddVideoForm : Form
     {
@@ -67,7 +67,11 @@ namespace AutoVideoPlayer
 
         public bool ValidateAndSetValues(DateTime selectedDateTime, decimal selectedNumberOfPlays)
         {
-            if (selectedDateTime < DateTime.Now)
+            DateTime now = DateTime.Now;
+            DateTime nowWithoutSeconds = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0);
+            DateTime selectedTimeWithoutSeconds = new DateTime(selectedDateTime.Year, selectedDateTime.Month, selectedDateTime.Day, selectedDateTime.Hour, selectedDateTime.Minute, 0);
+
+            if (selectedTimeWithoutSeconds < nowWithoutSeconds)
             {
                 MessageBox.Show("Можно выбрать время не раньше текущего.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;

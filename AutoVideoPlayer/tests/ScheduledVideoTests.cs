@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
 using System;
 
-namespace AutoVideoPlayer
+namespace VideoScheduler
 {
     [TestFixture]
     public class ScheduledVideoTests

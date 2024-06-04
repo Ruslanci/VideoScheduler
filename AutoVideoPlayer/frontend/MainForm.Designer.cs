@@ -1,4 +1,4 @@
-﻿namespace AutoVideoPlayer
+﻿namespace VideoScheduler
 {
     partial class MainForm
     {

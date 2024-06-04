@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace AutoVideoPlayer
+namespace VideoScheduler
 {
     public class VideoLabelManager
     {

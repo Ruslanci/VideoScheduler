@@ -5,7 +5,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using WMPLib;
 
-namespace AutoVideoPlayer
+namespace VideoScheduler
 {
     public class VideoScheduler
     {
@@ -119,11 +119,31 @@ namespace AutoVideoPlayer
         {
             if (File.Exists(saveFilePath))
             {
-                string json = File.ReadAllText(saveFilePath);
-                var scheduledVideosList = JsonConvert.DeserializeObject<List<ScheduledVideo>>(json);
+                try
+                {
+                    string json = File.ReadAllText(saveFilePath);
+                    var scheduledVideosList = JsonConvert.DeserializeObject<List<ScheduledVideo>>(json);
 
-                var validVideos = scheduledVideosList.Where(video => video.EndTime > DateTime.Now).ToList();
-                ScheduledVideos = new Queue<ScheduledVideo>(validVideos);
+                    if (scheduledVideosList != null)
+                    {
+                        var validVideos = scheduledVideosList.Where(video => video.EndTime > DateTime.Now).ToList();
+                        ScheduledVideos = new Queue<ScheduledVideo>(validVideos);
+                    }
+                    else
+                    {
+                        ScheduledVideos = new Queue<ScheduledVideo>();
+                    }
+                }
+                catch (JsonException jsonEx)
+                {
+                    Console.WriteLine($"Error parsing JSON: {jsonEx.Message}");
+                    ScheduledVideos = new Queue<ScheduledVideo>();
+                }
+                catch (IOException ioEx)
+                {
+                    Console.WriteLine($"Error reading file: {ioEx.Message}");
+                    ScheduledVideos = new Queue<ScheduledVideo>();
+                }
             }
         }
     }

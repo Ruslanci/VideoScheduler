@@ -88,7 +88,7 @@
     <Compile Include="tests\AddVideoFormTests.cs" />
     <Compile Include="tests\AutoVideoPlayerTests.cs" />
     <Compile Include="tests\ScheduledVideoTests.cs" />
-    <Compile Include="backend\VideoLabelManager.cs" />
+    <Compile Include="frontend\VideoLabelManager.cs" />
     <Compile Include="backend\VideoScheduler.cs" />
     <EmbeddedResource Include="frontend\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

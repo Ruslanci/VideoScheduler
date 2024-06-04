@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace AutoVideoPlayer
+namespace VideoScheduler
 {
     public class ScheduledVideo
     {
